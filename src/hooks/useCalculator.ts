@@ -34,6 +34,7 @@ export const useCalculator = () => {
       amounts[ingredient] = quantity * ratio;
     });
 
+    // Fix yogurt calculation to match Python code
     const containerWeight = 0.6667;
     if ("زبادي" in amounts) {
       const yogurtKg = amounts["زبادي"];
@@ -132,6 +133,33 @@ export const useCalculator = () => {
     }
   };
 
+  const handleAddIngredient = (name: string, amount: number) => {
+    if (name.trim() && amount >= 0 && !ingredients[name]) {
+      setIngredients(prev => ({
+        ...prev,
+        [name]: amount
+      }));
+      
+      toast({
+        title: "تم إضافة المكون",
+        description: `تم إضافة ${name} بنجاح`
+      });
+    }
+  };
+
+  const handleRemoveIngredient = (ingredient: string) => {
+    setIngredients(prev => {
+      const newIngredients = { ...prev };
+      delete newIngredients[ingredient];
+      return newIngredients;
+    });
+
+    toast({
+      title: "تم حذف المكون",
+      description: `تم حذف ${ingredient} من القائمة`
+    });
+  };
+
   return {
     amount,
     setAmount,
@@ -141,6 +169,8 @@ export const useCalculator = () => {
     handleCalculate,
     handleSaveRecord,
     handleDeleteRecord,
-    handleIngredientChange
+    handleIngredientChange,
+    handleAddIngredient,
+    handleRemoveIngredient
   };
 };

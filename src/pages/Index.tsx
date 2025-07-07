@@ -15,7 +15,9 @@ const Index = () => {
     handleCalculate,
     handleSaveRecord,
     handleDeleteRecord,
-    handleIngredientChange
+    handleIngredientChange,
+    handleAddIngredient,
+    handleRemoveIngredient
   } = useCalculator();
 
   return (
@@ -32,6 +34,8 @@ const Index = () => {
             setAmount={setAmount}
             ingredients={ingredients}
             onIngredientChange={handleIngredientChange}
+            onAddIngredient={handleAddIngredient}
+            onRemoveIngredient={handleRemoveIngredient}
             onCalculate={handleCalculate}
             onSaveRecord={handleSaveRecord}
             hasResults={!!results}
