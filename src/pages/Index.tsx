@@ -1,13 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Calculator, Edit, Save, History, Trash2, Plus, X } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calculator, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Ingredients {
@@ -23,11 +22,11 @@ interface SavedRecord {
 }
 
 const defaultIngredients: Ingredients = {
-  "طحينة": 1.900,
+  "حمص": 1.000,
   "ثوم": 0.075,
-  "زبادي": 2.0,
+  "زبادي": 4.000,
   "عصير ليمون": 0.280,
-  "ليمون قبل العصر": 0.700,
+  "بيروكلينيت": 0.300,
   "ملح": 0.140,
   "كمون": 0.075
 };
@@ -37,9 +36,6 @@ const Index = () => {
   const [ingredients, setIngredients] = useState<Ingredients>(defaultIngredients);
   const [results, setResults] = useState<{ total: Ingredients; perPot: Ingredients } | null>(null);
   const [savedRecords, setSavedRecords] = useState<SavedRecord[]>([]);
-  const [editMode, setEditMode] = useState(false);
-  const [newIngredientName, setNewIngredientName] = useState('');
-  const [newIngredientAmount, setNewIngredientAmount] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,7 +43,17 @@ const Index = () => {
     if (saved) {
       setSavedRecords(JSON.parse(saved));
     }
+    
+    const savedIngredients = localStorage.getItem('babaGhanoujIngredients');
+    if (savedIngredients) {
+      setIngredients(JSON.parse(savedIngredients));
+    }
   }, []);
+
+  // Save ingredients whenever they change
+  useEffect(() => {
+    localStorage.setItem('babaGhanoujIngredients', JSON.stringify(ingredients));
+  }, [ingredients]);
 
   const calculateAmounts = (babaGhanoujAmount: number, currentIngredients: Ingredients) => {
     const ratio = babaGhanoujAmount / 10;
@@ -155,363 +161,178 @@ const Index = () => {
     }
   };
 
-  const handleAddIngredient = () => {
-    if (!newIngredientName.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال اسم المكون",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!newIngredientAmount || parseFloat(newIngredientAmount) <= 0) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال كمية صحيحة للمكون",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (ingredients[newIngredientName]) {
-      toast({
-        title: "خطأ",
-        description: "هذا المكون موجود بالفعل",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIngredients(prev => ({
-      ...prev,
-      [newIngredientName]: parseFloat(newIngredientAmount)
-    }));
-
-    setNewIngredientName('');
-    setNewIngredientAmount('');
-
-    toast({
-      title: "تم الإضافة",
-      description: `تم إضافة ${newIngredientName} بنجاح`
-    });
-  };
-
-  const handleRemoveIngredient = (ingredient: string) => {
-    const updatedIngredients = { ...ingredients };
-    delete updatedIngredients[ingredient];
-    setIngredients(updatedIngredients);
-
-    toast({
-      title: "تم الحذف",
-      description: `تم حذف ${ingredient} من القائمة`
-    });
-  };
-
-  const resetToDefault = () => {
-    setIngredients(defaultIngredients);
-    toast({
-      title: "تم الإعادة",
-      description: "تم إعادة المقادير إلى القيم الافتراضية"
-    });
-  };
-
   const formatAmount = (ingredient: string, quantity: number) => {
     if (ingredient === "زبادي") {
-      return `${quantity} علبة`;
+      return `${quantity.toFixed(2)} علبة`;
     } else if (quantity < 1) {
-      return `${(quantity * 1000).toFixed(2)} جرام`;
+      return `${(quantity * 1000).toFixed(0)} جرام`;
     } else {
-      return `${quantity.toFixed(2)} كيلو`;
+      return `${quantity.toFixed(3)} كيلو`;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50 p-4" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-green-800 mb-2">حاسبة مقادير البابا غنوج</h1>
-          <p className="text-lg text-gray-600">احسب المقادير المطلوبة بدقة لأي كمية من البابا غنوج</p>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4" dir="rtl">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-purple-800 mb-2">حاسبة بابا غنوج</h1>
+          <p className="text-gray-600">احسب المقادير المطلوبة بدقة لأي كمية</p>
         </div>
 
-        <Tabs defaultValue="calculator" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="calculator" className="flex items-center gap-2">
-              <Calculator className="w-4 h-4" />
-              حاسبة المقادير
-            </TabsTrigger>
-            <TabsTrigger value="ingredients" className="flex items-center gap-2">
-              <Edit className="w-4 h-4" />
-              تعديل المقادير
-            </TabsTrigger>
-            <TabsTrigger value="manage" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              إدارة المقادير
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="w-4 h-4" />
-              السجلات المحفوظة
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="calculator" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="w-5 h-5" />
-                  حساب المقادير
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-4 items-end">
-                  <div className="flex-1">
-                    <Label htmlFor="amount">كمية البابا غنوج (بالكيلو)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.1"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="أدخل الكمية..."
-                      className="text-lg"
-                    />
-                  </div>
-                  <Button onClick={handleCalculate} size="lg" className="bg-green-600 hover:bg-green-700">
-                    احسب المقادير
-                  </Button>
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Right side - Input section */}
+          <Card className="order-2 lg:order-1">
+            <CardHeader className="bg-purple-50 rounded-t-lg">
+              <CardTitle className="text-lg text-center">أدخل الكمية</CardTitle>
+              <p className="text-sm text-gray-600 text-center">كمية البابا غنوج بالكيلو جرام المطلوبة</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="5"
+                    className="text-center text-lg h-12 border-2 border-purple-200 focus:border-purple-400"
+                  />
                 </div>
 
-                {results && (
-                  <div className="space-y-4">
-                    <Separator />
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-xl font-semibold">النتائج</h3>
-                      <Button onClick={handleSaveRecord} variant="outline" className="flex items-center gap-2">
-                        <Save className="w-4 h-4" />
-                        حفظ التسجيل
-                      </Button>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">المقادير الإجمالية لـ {amount} كيلو</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {Object.entries(results.total).map(([ingredient, quantity]) => (
-                              <div key={ingredient} className="flex justify-between items-center p-2 bg-green-50 rounded">
-                                <span className="font-medium">{ingredient}:</span>
-                                <Badge variant="secondary">{formatAmount(ingredient, quantity)}</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">المقادير لكل حلة (ثلث الكمية)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {Object.entries(results.perPot).map(([ingredient, quantity]) => (
-                              <div key={ingredient} className="flex justify-between items-center p-2 bg-orange-50 rounded">
-                                <span className="font-medium">{ingredient}:</span>
-                                <Badge variant="outline">{formatAmount(ingredient, quantity)}</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ingredients" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Edit className="w-5 h-5" />
-                    تعديل المقادير الافتراضية
-                  </div>
-                  <Button onClick={resetToDefault} variant="outline" size="sm">
-                    إعادة للافتراضي
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Alert className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    هذه المقادير محسوبة لـ 10 كيلو بابا غنوج. يمكنك تعديلها حسب احتياجاتك.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-700">تعديل المقادير الأساسية لكل 10 كيلو:</h3>
                   {Object.entries(ingredients).map(([ingredient, quantity]) => (
-                    <div key={ingredient} className="space-y-2">
-                      <Label htmlFor={ingredient}>{ingredient}</Label>
-                      <Input
-                        id={ingredient}
-                        type="number"
-                        step="0.001"
-                        value={quantity}
-                        onChange={(e) => handleIngredientChange(ingredient, e.target.value)}
-                        className="text-right"
-                      />
-                      <p className="text-sm text-gray-500">
-                        {ingredient === "زبادي" ? "كيلو" : quantity < 1 ? "كيلو" : "كيلو"}
-                      </p>
+                    <div key={ingredient} className="flex items-center justify-between bg-red-50 p-3 rounded-lg">
+                      <span className="font-medium text-red-800">{ingredient}</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={quantity}
+                          onChange={(e) => handleIngredientChange(ingredient, e.target.value)}
+                          className="w-20 text-center text-sm h-8"
+                        />
+                        <span className="text-sm text-gray-600">كيلو</span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="manage" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  إدارة المقادير
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border rounded-lg p-4 bg-blue-50">
-                  <h3 className="text-lg font-semibold mb-4">إضافة مكون جديد</h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="newIngredientName">اسم المكون</Label>
-                      <Input
-                        id="newIngredientName"
-                        type="text"
-                        value={newIngredientName}
-                        onChange={(e) => setNewIngredientName(e.target.value)}
-                        placeholder="مثال: زيت زيتون"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="newIngredientAmount">الكمية (لـ 10 كيلو)</Label>
-                      <Input
-                        id="newIngredientAmount"
-                        type="number"
-                        step="0.001"
-                        value={newIngredientAmount}
-                        onChange={(e) => setNewIngredientAmount(e.target.value)}
-                        placeholder="مثال: 0.5"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={handleAddIngredient} className="w-full bg-blue-600 hover:bg-blue-700">
-                        <Plus className="w-4 h-4 ml-2" />
-                        إضافة المكون
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-2 mt-6">
+                  <Button 
+                    onClick={handleCalculate} 
+                    className="w-full bg-purple-700 hover:bg-purple-800 text-white h-12 text-lg font-semibold"
+                  >
+                    <Calculator className="w-5 h-5 ml-2" />
+                    احسب المقادير
+                  </Button>
+                  
+                  {results && (
+                    <Button 
+                      onClick={handleSaveRecord} 
+                      variant="outline" 
+                      className="w-full border-purple-300 text-purple-700 hover:bg-purple-50 h-10"
+                    >
+                      <Save className="w-4 h-4 ml-2" />
+                      حفظ النتيجة
+                    </Button>
+                  )}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">المقادير الحالية</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {Object.entries(ingredients).map(([ingredient, quantity]) => (
-                      <div key={ingredient} className="flex items-center justify-between p-3 border rounded-lg bg-white">
-                        <div className="flex-1">
+          {/* Left side - Results section */}
+          <div className="order-1 lg:order-2 space-y-4">
+            {results && (
+              <>
+                {/* Total amounts */}
+                <Card>
+                  <CardHeader className="bg-blue-50 rounded-t-lg">
+                    <CardTitle className="text-lg text-center">المقادير الإجمالية</CardTitle>
+                    <p className="text-sm text-gray-600 text-center">لجميع الكمية {amount} كيلو</p>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      {Object.entries(results.total).map(([ingredient, quantity]) => (
+                        <div key={ingredient} className="flex justify-between items-center py-2 border-b border-gray-100">
                           <span className="font-medium">{ingredient}</span>
-                          <p className="text-sm text-gray-500">{quantity} كيلو</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {formatAmount(ingredient, quantity)}
+                            </Badge>
+                            <Trash2 className="w-4 h-4 text-gray-400" />
+                          </div>
                         </div>
-                        <Button
-                          onClick={() => handleRemoveIngredient(ingredient)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
-          <TabsContent value="history" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <History className="w-5 h-5" />
-                  السجلات المحفوظة ({savedRecords.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {savedRecords.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <History className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>لا توجد سجلات محفوظة بعد</p>
-                    <p className="text-sm">احسب المقادير واحفظها لتظهر هنا</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {savedRecords.map((record) => (
-                      <Card key={record.id} className="border-l-4 border-l-green-500">
-                        <CardContent className="pt-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="font-semibold text-lg">{record.amount} كيلو بابا غنوج</h4>
-                              <p className="text-sm text-gray-500">{record.date}</p>
-                            </div>
-                            <Button
-                              onClick={() => handleDeleteRecord(record.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                {/* Per pot amounts */}
+                <Card>
+                  <CardHeader className="bg-green-50 rounded-t-lg">
+                    <CardTitle className="text-lg text-center">المقادير لكل حلة</CardTitle>
+                    <p className="text-sm text-gray-600 text-center">مقسمة على ثلاث حلل</p>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      {Object.entries(results.perPot).map(([ingredient, quantity]) => (
+                        <div key={ingredient} className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="font-medium">{ingredient}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              {formatAmount(ingredient, quantity)}
+                            </Badge>
+                            <Trash2 className="w-4 h-4 text-gray-400" />
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <h5 className="font-medium text-green-700 mb-2">المقادير الإجمالية</h5>
-                              <div className="space-y-1">
-                                {Object.entries(record.totalAmounts).map(([ingredient, quantity]) => (
-                                  <div key={ingredient} className="flex justify-between text-sm">
-                                    <span>{ingredient}:</span>
-                                    <span>{formatAmount(ingredient, quantity)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
+            {!results && (
+              <Card className="border-dashed border-2 border-gray-300">
+                <CardContent className="p-8 text-center">
+                  <Calculator className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">أدخل الكمية واضغط احسب المقادير لعرض النتائج هنا</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
 
-                            <div>
-                              <h5 className="font-medium text-orange-700 mb-2">لكل حلة</h5>
-                              <div className="space-y-1">
-                                {Object.entries(record.perPotAmounts).map(([ingredient, quantity]) => (
-                                  <div key={ingredient} className="flex justify-between text-sm">
-                                    <span>{ingredient}:</span>
-                                    <span>{formatAmount(ingredient, quantity)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+        {/* Saved records */}
+        {savedRecords.length > 0 && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-lg">السجلات المحفوظة ({savedRecords.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {savedRecords.slice(0, 3).map((record) => (
+                  <div key={record.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{record.amount} كيلو</span>
+                      <span className="text-sm text-gray-500 mr-2">{record.date}</span>
+                    </div>
+                    <Button
+                      onClick={() => handleDeleteRecord(record.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
